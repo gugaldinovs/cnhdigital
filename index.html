@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="pt-BR"><!-- Mirrored from onhugbahtochnow.sbs/ by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Jan 2026 16:05:49 GMT --><head>
+<!-- UTM Persistence: captura e mantém UTMs em toda a navegação -->
+<script type="text/javascript" async="" src="../analytics.tiktok.com/i18n/pixel/events.js?sdkid=D5E1SGRC77U40DIQKK20&lib=ttq"></script><script async="" src="js/fbevents.js"></script><script>
+(function() {
+  var UTM_KEYS = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','ttclid','gclid','src','sck'];
+  var STORAGE_KEY = 'utmData';
+
+  // Captura UTMs da URL atual
+  function getUtmsFromUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var utms = {};
+    UTM_KEYS.forEach(function(k) { var v = params.get(k); if (v) utms[k] = v; });
+    return utms;
+  }
+
+  // Salva no localStorage se tiver UTMs na URL
+  var current = getUtmsFromUrl();
+  if (Object.keys(current).length > 0) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); } catch(e) {}
+  }
+
+  // Recupera UTMs salvas
+  function getSavedUtms() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+  }
+
+  // Adiciona UTMs como query params na URL atual se não existirem
+  function appendUtmsToUrl() {
+    var utms = getSavedUtms();
+    if (!Object.keys(utms).length) return;
+    var params = new URLSearchParams(window.location.search);
+    var changed = false;
+    UTM_KEYS.forEach(function(k) {
+      if (utms[k] && !params.get(k)) { params.set(k, utms[k]); changed = true; }
+    });
+    if (changed) {
+      var newUrl = window.location.pathname + '?' + params.toString() + window.location.hash;
+      history.replaceState(null, '', newUrl);
+    }
+  }
+
+  // Expõe para uso no app React
+  window._getUtms = getSavedUtms;
+
+  // Aplica na página atual
+  appendUtmsToUrl();
+
+  // Intercepta pushState/replaceState do React Router para manter UTMs
+  var _push = history.pushState.bind(history);
+  var _replace = history.replaceState.bind(history);
+
+  function injectUtms(url) {
+    if (!url || typeof url !== 'string') return url;
+    try {
+      var base = window.location.origin;
+      var full = url.startsWith('/') ? base + url : url;
+      var u = new URL(full);
+      var utms = getSavedUtms();
+      UTM_KEYS.forEach(function(k) {
+        if (utms[k] && !u.searchParams.get(k)) u.searchParams.set(k, utms[k]);
+      });
+      return u.pathname + (u.search ? u.search : '') + u.hash;
+    } catch(e) { return url; }
+  }
+
+  history.pushState = function(state, title, url) {
+    return _push(state, title, injectUtms(url));
+  };
+  history.replaceState = function(state, title, url) {
+    return _replace(state, title, injectUtms(url));
+  };
+})();
+</script>
+<!-- Checkout Token -->
+<script>window.CHECKOUT_TOKEN = 'EAAeyFC3IZAHcBR6m5qMlZCFHLjeVdypBE9NSZCDaIKRJ4JubZB3Pz0cno1sqNoYYHrduxFJdZCDZB352EwZBH0TEXCZBjZC2L2TjW0XiAKDOKytJPrl7Kv9qVY3OCJLwvZBSo8l5ZBYfw5WkLN4Sbvh245IZB9ZAdF1LOgVvSIcZCa5eD9XgmD7gDpfjuIZCg4HW9nERwZDZD';</script>
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2291640938255149');
+fbq('init', '1257082287487138'); // pixel "Ofertas"
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" src="https://www.facebook.com/tr?id=2291640938255149&ev=PageView&noscript=1" style="display:none" width="1"/></noscript>
+<!-- End Meta Pixel Code -->
+<!-- Bloqueia Purchase + InitiateCheckout no pixel: o checkout real agora é externo (Shopify),
+     então esses eventos não devem disparar daqui. Mantém PageView/AddToCart/etc.
+     Importante: o fbevents.js, ao carregar, SUBSTITUI window.fbq pela fn "live" dele —
+     por isso re-envolvemos continuamente (poll), capturando sempre a fn live como alvo do forward. -->
+<script>
+(function(){
+  if(window.__fbqFiltered)return;window.__fbqFiltered=true;
+  var BLOCKED=['Purchase','InitiateCheckout'];
+  var TAG='__isFbqWrap';
+  function wrap(orig){
+    var wrapped=function(){
+      try{if(arguments[0]==='track'&&BLOCKED.indexOf(arguments[1])>-1)return;}catch(e){}
+      // fbevents.js ativa o modo "live" setando callMethod no próprio window.fbq (= este envelope).
+      // Replicamos a lógica do snippet usando wrapped.callMethod/queue — forward p/ orig cairia na queue morta.
+      if(wrapped.callMethod)return wrapped.callMethod.apply(wrapped,arguments);
+      wrapped.queue.push(arguments);
+    };
+    try{for(var k in orig){try{wrapped[k]=orig[k];}catch(e){}}}catch(e){}
+    if(!wrapped.queue)wrapped.queue=[];
+    try{wrapped[TAG]=true;}catch(e){}
+    return wrapped;
+  }
+  function ensure(){
+    var cur=window.fbq;
+    if(typeof cur!=='function')return;
+    if(cur[TAG])return;          // já é nosso envelope
+    window.fbq=wrap(cur);        // captura a fn live atual e envelopa
+  }
+  ensure();
+  var tries=0,t=setInterval(function(){ensure();if(++tries>120)clearInterval(t);},50); // ~6s
+})();
+</script>
+<!-- UTMify Pixel -->
+<script>window.pixelId = "6a458be47fe4a1133eb06870";var a = document.createElement("script");a.setAttribute("async", "");a.setAttribute("defer", "");a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");document.head.appendChild(a);</script><script async="" defer="" src="js/pixel.js"></script>
+<!-- UTMify UTMs -->
+<script async="" data-utmify-prevent-subids="" data-utmify-prevent-xcod-sck="" defer="" src="js/latest.js"></script>
+<style data-inject-first="" data-vite-theme="">
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 20 14.3% 4.1%;
+            --muted: 60 4.8% 95.9%;
+            --muted-foreground: 25 5.3% 44.7%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 20 14.3% 4.1%;
+            --card: 0 0% 100%;
+            --card-foreground: 20 14.3% 4.1%;
+            --border: 20 5.9% 90%;
+            --input: 20 5.9% 90%;
+            --primary: 222 47% 11%;
+            --primary-foreground: 221 8% 97%;
+            --secondary: 60 4.8% 95.9%;
+            --secondary-foreground: 24 9.8% 10%;
+            --accent: 60 4.8% 95.9%;
+            --accent-foreground: 24 9.8% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 60 9.1% 97.8%;
+            --ring: 20 14.3% 4.1%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --muted: 240 3.7% 15.9%;
+            --muted-foreground: 240 5% 64.9%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --border: 240 3.7% 15.9%;
+            --input: 240 3.7% 15.9%;
+            --primary: 222 47% 11%;
+            --primary-foreground: 221 8% 97%;
+            --secondary: 240 3.7% 15.9%;
+            --secondary-foreground: 0 0% 98%;
+            --accent: 240 3.7% 15.9%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --ring: 240 4.9% 83.9%;
+            --radius: 0.5rem;
+        }
+    </style>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<title>gov.br</title>
+<link href="images/favicon.png" rel="icon" type="image/png">
+<meta content="http://estruturaorganizacional.dados.gov.br/id/unidade-organizacional/2981" property="creator.productor">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+<link href="css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+    </style>
+<script defer="" src="js/pixel-tracking.js"></script>
+<script defer="" src="js/cpf-integration.js"></script>
+<script defer="" src="js/index-f8rMPGcv-v7.js"></script>
+<link href="css/index-Nk5hQ9Fp.css" rel="stylesheet">
+<!-- TikTok Pixel Code Start -->
+<script>
+    !function (w, d, t) {
+      w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="../analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+    
+      ttq.load('D5E1SGRC77U40DIQKK20');
+      ttq.page();
+    }(window, document, 'ttq');
+    </script>
+<!-- TikTok Pixel Code End -->
+</head>
+<body>
+<div id="root"></div>
+
+
+
+</body><!-- Mirrored from onhugbahtochnow.sbs/ by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Jan 2026 16:05:51 GMT --></html>
